@@ -32,9 +32,7 @@
         </div>
 
         <!-- Div to display generated QR codes -->
-        <div id="qrContainer" class="mt-3"></div>
-
-
+        <div class="row mt-3" id="qrContainer"></div>
     </div>
 
     <script>
@@ -46,13 +44,12 @@
         // Function to generate a single QR code with a download button
         function createQRCode(data) {
             let qrDiv = document.createElement("div");
-            qrDiv.classList.add("mt-3", "text-center");
+            qrDiv.classList.add("col-md-3", "mt-3", "text-center"); // Add Bootstrap classes for grid layout
 
             let img = document.createElement("img");
-            // Set the API URL for QR Code generation with transparent background
             img.src = "https://api.qrserver.com/v1/create-qr-code/?size=1020x120&data=" + encodeURIComponent(data) + "&bgcolor=FFFFFF00&color=000000"; // Transparent background
             img.alt = "QR Code for " + data;
-            img.classList.add("mb-2");
+            img.classList.add("mb-2", "img-fluid"); // Make the image responsive
 
             // Store QR code data
             qrCodes.push({
@@ -62,8 +59,8 @@
 
             // Create the download button
             let downloadBtn = document.createElement("button");
-            downloadBtn.innerText = "Download QR";
-            downloadBtn.classList.add("btn", "btn-success", "ml-2");
+            // downloadBtn.innerText = "Download QR";
+            // downloadBtn.classList.add("btn", "btn-success", "ml-2");
             downloadBtn.onclick = function() {
                 downloadQRCode(img.src, data);
             };
@@ -75,7 +72,7 @@
             caption.innerText = "QR Code for: " + data;
             qrDiv.appendChild(caption);
 
-            qrDiv.appendChild(downloadBtn);
+            // qrDiv.appendChild(downloadBtn);
 
             qrContainer.appendChild(qrDiv);
         }
