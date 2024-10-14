@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <!-- Bootstrap -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+
+    <h1 class="text-center mt-5">QR Code Generator</h1>
+
+    <div class="container">
+        <h4>Enter the text/ID or upload a CSV file</h4>
+
+        <!-- Input for manual ID -->
+        <input type="text" id="qrText" class="form-control mb-3" placeholder="Enter ID or Text">
+
+        <!-- File input for uploading CSV -->
+        <input type="file" id="csvFile" accept=".csv" class="form-control-file mb-3">
+        <div class="row">
+            <div class="col-12">
+                <button class="btn btn-primary mt-3" onclick="generateQR()">Generate QR</button>
+                <button class="btn btn-info mt-3" onclick="downloadAll()">Download All</button>
+            </div>
+        </div>
+
+        <!-- Div to display generated QR codes -->
+        <div id="qrContainer" class="mt-3"></div>
+
+
+    </div>
+
+    <script>
+        let qrContainer = document.getElementById("qrContainer");
+        let qrText = document.getElementById("qrText");
+        let csvFile = document.getElementById("csvFile");
+        let qrCodes = []; // Array to store QR code data
+
+        // Function to generate a single QR code with a download button
+        function createQRCode(data) {
+            let qrDiv = document.createElement("div");
+            qrDiv.classList.add("mt-3", "text-center");
+
+            let img = document.createElement("img");
+            // Set the API URL for QR Code generation with transparent background
+            img.src = "https://api.qrserver.com/v1/create-qr-code/?size=1020x120&data=" + encodeURIComponent(data) + "&bgcolor=FFFFFF00&color=000000"; // Transparent background
+            img.alt = "QR Code for " + data;
+            img.classList.add("mb-2");
+
+            // Store QR code data
+            qrCodes.push({
+                data: data,
+                url: img.src
+            });
+
+            // Create the download button
+            let downloadBtn = document.createElement("button");
+            downloadBtn.innerText = "Download QR";
+            downloadBtn.classList.add("btn", "btn-success", "ml-2");
+            downloadBtn.onclick = function() {
+                downloadQRCode(img.src, data);
+            };
+
+            // Append the image, caption, and download button to the div
+            qrDiv.appendChild(img);
+
+            let caption = document.createElement("p");
+            caption.innerText = "QR Code for: " + data;
+            qrDiv.appendChild(caption);
+
+            qrDiv.appendChild(downloadBtn);
+
+            qrContainer.appendChild(qrDiv);
+        }
+
+        // Function to download the QR code image
+        function downloadQRCode(url, filename) {
+            let link = document.createElement('a');
+            link.href = url;
+            link.download = filename + ".png"; // Use the filename as the ID or text
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Function to generate QR codes for manually entered ID or from uploaded CSV
+        function generateQR() {
+            // Clear any previously generated QR codes
+            qrContainer.innerHTML = "";
+            qrCodes = []; // Reset QR codes array
+
+            let qrData = qrText.value.trim();
+
+            if (qrData) {
+                // If text input has data, generate QR for the entered ID/text
+                createQRCode(qrData);
+            } else if (csvFile.files.length > 0) {
+                // If a CSV file is uploaded, read the file and generate QR codes for each ID
+                let file = csvFile.files[0];
+                let reader = new FileReader();
+
+                reader.onload = function(e) {
+                    let csvContent = e.target.result;
+                    let rows = csvContent.split("\n");
+
+                    rows.forEach((row) => {
+                        let id = row.trim(); // Get the ID from each row
+                        if (id) {
+                            createQRCode(id); // Generate QR code for each ID
+                        }
+                    });
+                };
+
+                reader.readAsText(file);
+            } else {
+                alert("Please enter an ID or upload a CSV file.");
+            }
+        }
+
+        // Function to download all QR codes in a ZIP file
+        function downloadAll() {
+            if (qrCodes.length === 0) {
+                alert("Please generate some QR codes before downloading.");
+                return;
+            }
+
+            let zip = new JSZip();
+            let promises = [];
+
+            qrCodes.forEach(qr => {
+                let imgData = qr.url;
+                let filename = qr.data + ".png"; // Filename for the QR code image
+
+                promises.push(fetch(imgData)
+                    .then(response => response.blob())
+                    .then(blob => zip.file(filename, blob)));
+            });
+
+            Promise.all(promises).then(() => {
+                zip.generateAsync({
+                        type: "blob"
+                    })
+                    .then(content => {
+                        // Create a link to download the ZIP file
+                        let link = document.createElement('a');
+                        link.href = URL.createObjectURL(content);
+                        link.download = "qr_codes.zip"; // Name of the downloaded ZIP file
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    });
+            });
+        }
+    </script>
+
+</body>
+
+</html>
