@@ -1,0 +1,1 @@
+# QR-Code-Genarated-All_D
